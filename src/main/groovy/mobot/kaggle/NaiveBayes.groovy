@@ -3,16 +3,13 @@ package mobot.kaggle
 import com.univocity.parsers.tsv.TsvParser
 import com.univocity.parsers.tsv.TsvParserSettings
 
-class ConvertTrainingDataToArff {
-    public ConvertTrainingDataToArff() {
+class NaiveBayes {
+    public NaiveBayes() {
     }
 
     public static void main(String[] args) {
-        File file = new File(args[0], 'training.tsv');
-        String header = new File(args[0], 'Kaggle.arff.header').text;
-        File out = new File(args[0], 'training.arff');
-        out.write(header+"\n\n");
-        out.append("@data\n");
+        File data = new File(args[0]);
+        KaggleFeatures features = new KaggleFeatures(new File(data, "header.txt"));
 
         TsvParserSettings settings = new TsvParserSettings();
         //the file used in the example uses '\n' as the line separator sequence.
@@ -22,9 +19,11 @@ class ConvertTrainingDataToArff {
         // creates a TSV parser
         TsvParser parser = new TsvParser(settings);
         // parses all rows in one go.
-        List<String[]> allRows = parser.parseAll(file);
-        for(String[] row: allRows) {
-            out.append(row.join(",")+"\n");
-        }
+        List<String[]> allRows = parser.parseAll(new File(data, "training.tsv"));
+        Instances instances = new Instances(features.getFeatures());
+        instances.addAll(allRows);
+        instances.train(features.features.length - 1);
+
+        instances.test(instances);
     }
 }
