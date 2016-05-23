@@ -1,5 +1,4 @@
 package mobot.kaggle
-
 /**
  * Created by tlin1 on 5/20/16.
  */
@@ -13,17 +12,25 @@ class Instances {
         instances = new ArrayList<>();
     }
 
+    public Feature getFeature(int featureIndex) {
+        return features[featureIndex];
+    }
+
+    public List<Double[]> getInstances() {
+        return instances;
+    }
+
     public void addAll(List<String[]> data) {
-        for (String[] row: data) {
+        for (String[] row : data) {
             add(row);
         }
     }
 
     public Double[] add(String[] data) {
-        if (features.length != data.length) {
-            throw new IllegalArgumentException("Illegal data, size doesn't match:" + features.length + ", "
-                    + data.length);
-        }
+//        if (features.length != data.length) {
+//            throw new IllegalArgumentException("Illegal data, size doesn't match:" + features.length + ", "
+//                    + data.length);
+//        }
         Double[] row = new Double[data.length];
         for (int i = 0; i < data.length; i++) {
             if (features[i].type == Feature.Type.Numberic) {
@@ -57,24 +64,23 @@ class Instances {
             }
             features[i].normalize(instanceValues, categoryCounts);
         }
-        println("---------------------");
-        println("Total: " + instances.size() +", actual:"+ feature.frequenceTable);
+        println("Total: " + instances.size() + ", actual:" + feature.frequenceTable + "," + feature.values);
     }
 
     public void test(Instances instances) {
         Feature feature = features[expectedFeatureIndex];
         int[][] results = new int[feature.values.length][feature.values.length];
-        for (Double[] values: instances.instances) {
+        for (Double[] values : instances.instances) {
             int expectedCategory = test(values);
             int actualCategory = (int) values[expectedFeatureIndex];
             results[actualCategory][expectedCategory]++;
         }
-        println (feature.values);
-        println (results);
+        println(feature.values);
+        println(results);
         int correct = results[0][0] + results[1][1];
         int wrong = results[0][1] + results[1][0];
         int total = correct + wrong;
-        println ("correct=" + (correct/(double) total) + ", wrong=" + (wrong/(double) total));
+        println("correct=" + (correct / (double) total) + ", wrong=" + (wrong / (double) total));
     }
 
     public int test(Double[] instanceValues) {
@@ -86,7 +92,7 @@ class Instances {
         // P(c|x) = P(x|c) * P(c)/P(x)
         double px = 1.0;
         for (int i = 0; i < features.length; i++) {
-            if (i == expectedFeatureIndex) {
+            if (i == expectedFeatureIndex || !features[i].enabled) {
                 continue;
             }
             double[] predict = features[i].predict(instanceValues[i]);
@@ -109,5 +115,23 @@ class Instances {
             }
         }
         return expectedCategory;
+    }
+
+    public String[] guess(Instances instances) {
+        Feature feature = features[expectedFeatureIndex];
+        int[] resultCounts = new int[feature.values.length];
+        String[] results = new String[instances.instances.size()];
+        int idx = 0;
+        for (Double[] values : instances.instances) {
+            int expectedCategory = test(values);
+            resultCounts[expectedCategory]++;
+            results[idx++] = feature.values[expectedCategory].toUpperCase();
+        }
+        println("----- guess results=" + resultCounts);
+        return results;
+    }
+
+    public Feature[] getFeatures() {
+        return features;
     }
 }
