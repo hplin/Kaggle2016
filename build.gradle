@@ -15,9 +15,16 @@ dependencies {
 }
 
 
-task convertData(dependsOn: 'build', type: JavaExec) {
+task naiveBayes(dependsOn: 'build', type: JavaExec) {
     group "shells"
     classpath = sourceSets.main.runtimeClasspath
     args = [file('data')]
     main='mobot.kaggle.NaiveBayes'
+}
+
+task perceptron(dependsOn: 'build', type: JavaExec) {
+    group "shells"
+    classpath = sourceSets.main.runtimeClasspath
+    args = [file('data')]
+    main='mobot.kaggle.Perceptron'
 }

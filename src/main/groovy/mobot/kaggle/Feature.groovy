@@ -1,6 +1,5 @@
 package mobot.kaggle
 
-import groovy.json.JsonBuilder
 import org.apache.commons.math3.distribution.NormalDistribution
 import org.apache.commons.math3.stat.descriptive.moment.Mean
 import org.apache.commons.math3.stat.descriptive.moment.StandardDeviation
@@ -13,10 +12,50 @@ class Feature {
         Numberic,
         Enumeric
     }
-
+    public enum EducationGroup {
+        AdvanceEdu,
+        CollegeEdu,
+        HighEdu,
+        MiddleEdu,
+        EleEdu
+    }
     public interface Convertable {
         public double convert(String key);
+
         public int getCount();
+    }
+    public static class EducationConvertable implements Convertable {
+
+        private Map<String, Integer> groups = new HashMap<String, Integer>() {
+            {
+                put("Bachelors", Feature.EducationGroup.CollegeEdu.ordinal());
+                put("Some-college", Feature.EducationGroup.CollegeEdu.ordinal());
+                put("11th", Feature.EducationGroup.HighEdu.ordinal());
+                put("HS-grad", Feature.EducationGroup.HighEdu.ordinal());
+                put("Prof-school", Feature.EducationGroup.CollegeEdu.ordinal());
+                put("Assoc-acdm", Feature.EducationGroup.CollegeEdu.ordinal());
+                put("Assoc-voc", Feature.EducationGroup.CollegeEdu.ordinal());
+                put("9th", Feature.EducationGroup.HighEdu.ordinal());
+                put("7th-8th", Feature.EducationGroup.MiddleEdu.ordinal());
+                put("12th", Feature.EducationGroup.HighEdu.ordinal());
+                put("Masters", Feature.EducationGroup.AdvanceEdu.ordinal());
+                put("1st-4th", Feature.EducationGroup.EleEdu.ordinal());
+                put("10th", Feature.EducationGroup.MiddleEdu.ordinal());
+                put("Doctorate", Feature.EducationGroup.AdvanceEdu.ordinal());
+                put("5th-6th", Feature.EducationGroup.EleEdu.ordinal());
+                put("Preschool", Feature.EducationGroup.EleEdu.ordinal());
+            }
+        }
+
+        @Override
+        double convert(String key) {
+            return groups.get(key);
+        }
+
+        @Override
+        int getCount() {
+            return Feature.EducationGroup.values().size();
+        }
     }
 
     public final Convertable INDEX_CONVERTABLE = new Convertable() {
@@ -39,10 +78,10 @@ class Feature {
             return values.length;
         }
     }
-
     public final String name;
     public final Type type;
     public final String[] values;
+    public final int index;
     double[] frequenceTable;
     private double[][] conditionalFrequenceTable;
     private Convertable convertable = INDEX_CONVERTABLE;
@@ -50,9 +89,10 @@ class Feature {
     private NormalDistribution frequenceDistribution
     public boolean enabled = true;
 
-    public Feature(String name, Type type, String value) {
+    public Feature(String name, Type type, int index, String value) {
         this.name = name;
         this.type = type;
+        this.index = index;
         if (type == Type.Enumeric) {
             this.values = value.split(",");
             for (int i = 0; i < values.length; i++) {
@@ -76,13 +116,15 @@ class Feature {
     public void normalize(double[][] instanceValues, int[] categoryCounts) {
         if (type == Type.Numberic) {
             normalDistribution = new NormalDistribution[categoryCounts.length];
+            Mean meanUtil = new Mean();
+            StandardDeviation stdUtil = new StandardDeviation();
             for (int i = 0; i < categoryCounts.length; i++) {
-                double mean = new Mean().evaluate(instanceValues[i], 0, categoryCounts[i]);
-                double std = new StandardDeviation().evaluate(instanceValues[i], mean, 0, categoryCounts[i]);
+                double mean = meanUtil.evaluate(instanceValues[i], 0, categoryCounts[i]);
+                double std = stdUtil.evaluate(instanceValues[i], mean, 0, categoryCounts[i]);
                 normalDistribution[i] = new NormalDistribution(mean, std);
             }
             int total = 0;
-            for (int cnt: categoryCounts) {
+            for (int cnt : categoryCounts) {
                 total += cnt;
             }
             double[] all = new double[total];
@@ -92,8 +134,8 @@ class Feature {
                     all[idx++] = instanceValues[i][j];
                 }
             }
-            double mean = new Mean().evaluate(all, 0, all.length);
-            double std = new StandardDeviation().evaluate(all, mean, 0, all.length);
+            double mean = meanUtil.evaluate(all, 0, all.length);
+            double std = stdUtil.evaluate(all, mean, 0, all.length);
             frequenceDistribution = new NormalDistribution(mean, std);
         } else {
             int valueCount = convertable.getCount();

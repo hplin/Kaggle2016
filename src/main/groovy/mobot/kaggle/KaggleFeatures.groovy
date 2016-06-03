@@ -33,9 +33,9 @@ class KaggleFeatures {
             String name = ss[0].trim();
             String type = ss[1].trim();
             if ("NUMERIC".equals(type)) {
-                features.add(new Feature(name, Feature.Type.Numberic, null));
+                features.add(new Feature(name, Feature.Type.Numberic, features.size(), null));
             } else {
-                features.add(new Feature(name, Feature.Type.Enumeric, type));
+                features.add(new Feature(name, Feature.Type.Enumeric, features.size(), type));
             }
         }
     }
